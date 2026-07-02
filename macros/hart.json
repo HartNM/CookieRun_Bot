@@ -1,0 +1,19 @@
+[
+    "[Click] Play!.png",
+    "[Click] Random Boost.png",
+    "[Click] Random Boost Multi.png",
+    "[Click] Random Boost Multi Buy.png",
+    "[Wait] Double Coins.png",
+    "[Click] Play!2.png",
+    "[Click] Fast Start.png",
+    "[Spam-Wait] [Jump.png] [S:550] Cookie Relay.png",
+    "[Click] Cookie Relay.png",
+    "[Delay-Only] 1000ms",
+    "[Click] Stop.png",
+    "[Click] Quit.png",
+    "[Click] Quit2.png",
+    "[Delay-Only] 1000ms",
+    "[Click] End OK.png",
+    "[Spam-Wait] [Level Up Confirm.png] [S:1000] Lobby.png",
+    "[Delay-Only] 5000ms"
+]
