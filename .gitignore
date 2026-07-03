@@ -20,3 +20,6 @@ Thumbs.db
 
 # Screen capture logs
 stuck_screenshots/
+
+# Release archives
+*.zip
