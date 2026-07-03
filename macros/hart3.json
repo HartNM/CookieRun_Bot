@@ -1,0 +1,33 @@
+{
+    "steps": [
+        "[Click] Play!.png",
+        "[Click] Random Boost.png",
+        "[Click] Random Boost Multi.png",
+        "[Click] Random Boost Multi Buy.png",
+        "[Wait] Double Coins.png",
+        "[Click] Play!2.png",
+        "[Click] Fast Start.png",
+        "[Spam-Wait] [Jump.png] [S:550] Cookie Relay.png",
+        "[Click] Cookie Relay.png",
+        "[Click] Stop.png",
+        "[Click] Quit.png",
+        "[Click] Quit2.png",
+        "[Delay-Only] 1000ms",
+        "[Solve-Minigame] Bot check.png",
+        "[Click] End OK.png",
+        "[Spam-Wait] [Level Up Confirm.png] [S:1000] Lobby 3.png",
+        "[Delay-Only] 10000ms",
+        "[SkipNot:1] Send Life Cancel.png",
+        "[Click] Send Life Cancel.png",
+        "[SkipNot:1] Friend's Info Exit.png",
+        "[Click] Friend's Info Exit.png",
+        "[SkipNot:4] Relic Lobby 3.png",
+        "[Click] Relic Lobby 3.png",
+        "[Click] Relic Lobby 3 Claim.png",
+        "[Click] Relic Lobby 3 Confirm.png",
+        "[Click] Relic Lobby 3 Exit.png"
+    ],
+    "timeout_mins": 7,
+    "package_name": "com.devsisters.crg",
+    "stuck_action": "รีสตาร์ทเกม & เริ่มใหม่"
+}

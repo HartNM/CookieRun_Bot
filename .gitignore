@@ -1,0 +1,22 @@
+# Python compiler cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PyInstaller build outputs
+build/
+dist/
+
+# Standalone executables (like CookieRun_Bot.exe)
+*.exe
+
+# Log files
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Screen capture logs
+stuck_screenshots/

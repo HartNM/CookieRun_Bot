@@ -1,0 +1,41 @@
+{
+    "steps": [
+        "[Click] Play!.png",
+        "[Click] Random Boost.png",
+        "[Click] Random Boost Multi.png",
+        "[Click] Random Boost Multi Buy.png",
+        "[Wait] Double Coins.png",
+        "[Click] Play!2.png",
+        "[Click] Fast Start.png",
+        "[Spam-Click] [Jump.png] [S:550] Cookie Relay.png",
+        "[Click] Stop.png",
+        "[Click] Quit.png",
+        "[Click] Quit2.png",
+        "[Delay-Only] 1000ms",
+        "[Solve-Minigame] Bot check.png",
+        "[SkipNot:1] End OK.png",
+        "[Click] End OK.png",
+        "[SkipNot:1] Mystery Box Open All.png",
+        "[Click] Mystery Box Open All.png",
+        "[SkipNot:1] Mystery Box Comfirm.png",
+        "[Click] Mystery Box Comfirm.png",
+        "[Loop-Control:7] Duration:20s"
+    ],
+    "recovery_steps": [
+        "[Force-Stop-Game]",
+        "[Delay-Only] 2000ms",
+        "[Launch-Game]",
+        "[Delay-Only] 10000ms",
+        "[SkipNot:1] News Exit.png",
+        "[Click] News Exit.png",
+        "[Solve-Minigame] Bot check.png",
+        "[SkipNot:1] Mystery Box Open All.png",
+        "[Click] Mystery Box Open All.png",
+        "[SkipNot:1] Mystery Box Comfirm.png",
+        "[Click] Mystery Box Comfirm.png",
+        "[Loop-Control:7] Duration:20s"
+    ],
+    "timeout_mins": 7,
+    "package_name": "com.devsisters.crg",
+    "stuck_action": "รีสตาร์ทเกม & เริ่มใหม่"
+}
