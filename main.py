@@ -32,88 +32,9 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
 
 sys.excepthook = global_exception_handler
 
-def ensure_adb_server():
-    try:
-        subprocess.run(["adb", "start-server"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return
-    except FileNotFoundError:
-        pass
-    if not os.path.exists("platform-tools/adb.exe"):
-        try:
-            url = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
-            urllib.request.urlretrieve(url, "platform-tools.zip")
-            with zipfile.ZipFile("platform-tools.zip", 'r') as zip_ref:
-                zip_ref.extractall(".")
-            os.remove("platform-tools.zip")
-        except Exception as e:
-            logging.error(f"Failed to download ADB: {e}")
-            raise Exception(f"ไม่สามารถดาวน์โหลด ADB อัตโนมัติได้ กรุณาต่อเน็ต: {e}")
-            
-    try:
-        subprocess.run(["platform-tools\\adb.exe", "start-server"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except Exception as e:
-        logging.error(f"Failed to start local ADB: {e}")
-        raise Exception(f"ไม่สามารถเปิดการทำงานของ ADB ได้: {e}")
+from utils import ensure_adb_server, parse_package_from_string
 
-class CropWindow(tk.Toplevel):
-    def __init__(self, master, image_array, callback):
-        super().__init__(master)
-        self.title("Crop Template (ลากเมาส์เพื่อครอบภาพ)")
-        self.callback = callback
-        
-        self.original_img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-        self.rgb_img = cv2.cvtColor(self.original_img, cv2.COLOR_BGR2RGB)
-        
-        self.h, self.w = self.rgb_img.shape[:2]
-        self.display_w = min(1000, self.w)
-        self.scale = self.display_w / self.w
-        self.display_h = int(self.h * self.scale)
-        
-        resized = cv2.resize(self.rgb_img, (self.display_w, self.display_h))
-        self.pil_img = Image.fromarray(resized)
-        self.tk_img = ImageTk.PhotoImage(self.pil_img)
-        
-        self.canvas = tk.Canvas(self, width=self.display_w, height=self.display_h, cursor="cross")
-        self.canvas.pack()
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=self.tk_img)
-        
-        self.rect = None
-        self.start_x = None
-        self.start_y = None
-        
-        self.canvas.bind("<ButtonPress-1>", self.on_button_press)
-        self.canvas.bind("<B1-Motion>", self.on_move_press)
-        self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
-        
-        tk.Label(self, text=" ลากเมาส์คลุมบริเวณที่ต้องการทำเป็น Template (ปล่อยเมาส์เพื่อยืนยัน) ", bg="yellow", fg="black", font=("Helvetica", 12)).place(x=10, y=10)
-
-    def on_button_press(self, event):
-        self.start_x = event.x
-        self.start_y = event.y
-        if self.rect:
-            self.canvas.delete(self.rect)
-        self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline='red', width=3)
-
-    def on_move_press(self, event):
-        cur_x, cur_y = (event.x, event.y)
-        self.canvas.coords(self.rect, self.start_x, self.start_y, cur_x, cur_y)
-
-    def on_button_release(self, event):
-        end_x, end_y = (event.x, event.y)
-        x1 = int(min(self.start_x, end_x) / self.scale)
-        x2 = int(max(self.start_x, end_x) / self.scale)
-        y1 = int(min(self.start_y, end_y) / self.scale)
-        y2 = int(max(self.start_y, end_y) / self.scale)
-        
-        if x2 - x1 > 5 and y2 - y1 > 5:
-            cropped_bgr = self.original_img[y1:y2, x1:x2]
-            name = simpledialog.askstring("Save Template", "ตั้งชื่อไฟล์ภาพ (ภาษาไทยได้):", parent=self)
-            if name:
-                if not name.endswith('.png'):
-                    name += '.png'
-                self.callback(name, cropped_bgr, x1, y1, x2, y2)
-        
-        self.destroy()
+from ui_components import CropWindow
 
 class CookieRunBotUI:
     def __init__(self, root):
@@ -606,222 +527,25 @@ class CookieRunBotUI:
             self._drag_start_index = i
 
     def ask_spam_wait_details(self):
-        d = tk.Toplevel(self.root)
-        d.title("ตั้งค่า Spam & Wait")
-        d.geometry("320x280")
-        d.transient(self.root)
-        d.grab_set()
-        
-        result = {}
-        
-        tk.Label(d, text="1. เลือกรูปปุ่มที่จะสแปมกด:", font=("Helvetica", 10, "bold")).pack(pady=(10,0))
+        from ui_dialogs import ask_spam_wait_details as dlg_spam
         templates = [f for f in self.macro_combo['values'] if not f.startswith("-- ")]
-        combo = ttk.Combobox(d, values=templates, state="readonly", width=25)
-        combo.pack(pady=5)
-        if templates: combo.current(0)
-        
-        tk.Label(d, text="หรือ พิมพ์พิกัด X,Y เอง (เช่น 150,850):").pack(pady=(5,0))
-        entry_xy = tk.Entry(d, width=15)
-        entry_xy.pack(pady=5)
-        
-        tk.Label(d, text="2. ความถี่ในการกด (มิลลิวินาที):", font=("Helvetica", 10, "bold")).pack(pady=(10,0))
-        entry_ms = tk.Entry(d, width=15)
-        entry_ms.insert(0, "600")
-        entry_ms.pack(pady=5)
-        
-        def on_ok():
-            target = entry_xy.get().strip()
-            if not target:
-                target = combo.get()
-            
-            ms_val = entry_ms.get().strip()
-            if not ms_val.isdigit():
-                messagebox.showwarning("Error", "ความถี่ต้องเป็นตัวเลขเท่านั้น!", parent=d)
-                return
-                
-            result['target'] = target
-            result['delay'] = int(ms_val)
-            d.destroy()
-            
-        tk.Button(d, text="ตกลง", command=on_ok, bg="#4CAF50", fg="white", width=15).pack(pady=15)
-        
-        self.root.wait_window(d)
-        if 'target' in result:
-            return result['target'], result['delay']
-        return None
+        return dlg_spam(self.root, templates)
 
     def ask_multi_loop_details(self):
-        d = tk.Toplevel(self.root)
-        d.title("ตั้งค่า Loop หลายปุ่ม (Loop Multi-Buttons)")
-        d.geometry("350x400")
-        d.transient(self.root)
-        d.grab_set()
-        
-        result = {}
-        
-        tk.Label(d, text="1. เลือกปุ่มทั้งหมดที่จะคลิกวนลูป (เลือกได้มากกว่า 1 ปุ่ม):", font=("Helvetica", 10, "bold")).pack(pady=(10,0))
-        
-        # Listbox with multiple selection
-        frame = tk.Frame(d)
-        frame.pack(pady=5, fill="both", expand=True, padx=20)
-        
-        scrollbar = tk.Scrollbar(frame, orient="vertical")
-        listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar.set, height=8)
-        scrollbar.config(command=listbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill="y")
-        listbox.pack(side=tk.LEFT, fill="both", expand=True)
-        
-        # Populate templates list
-        files = glob.glob("templates/*.png")
-        names = [os.path.basename(f) for f in files]
-        for name in names:
-            listbox.insert(tk.END, name)
-            
-        tk.Label(d, text="2. หน่วงเวลาระหว่างคลิก (มิลลิวินาที ms):", font=("Helvetica", 10, "bold")).pack(pady=(10,0))
-        entry_ms = tk.Entry(d, width=15)
-        entry_ms.insert(0, "500")
-        entry_ms.pack(pady=5)
-        
-        def on_ok():
-            selected_indices = listbox.curselection()
-            if not selected_indices:
-                messagebox.showwarning("Error", "กรุณาเลือกอย่างน้อย 1 ปุ่ม!", parent=d)
-                return
-                
-            selected_templates = [listbox.get(i) for i in selected_indices]
-            
-            ms_val = entry_ms.get().strip()
-            if not ms_val.isdigit():
-                messagebox.showwarning("Error", "ความถี่หน่วงเวลาต้องเป็นตัวเลขเท่านั้น!", parent=d)
-                return
-                
-            result['templates'] = selected_templates
-            result['delay'] = int(ms_val)
-            d.destroy()
-            
-        def on_cancel():
-            d.destroy()
-            
-        btn_frame = tk.Frame(d)
-        btn_frame.pack(pady=15)
-        tk.Button(btn_frame, text="ตกลง (OK)", command=on_ok, bg="#C8E6C9", width=12).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="ยกเลิก", command=on_cancel, bg="#FFCDD2", width=12).pack(side=tk.LEFT, padx=5)
-        
-        self.root.wait_window(d)
-        if 'templates' in result:
-            return result['templates'], result['delay']
-        return None
+        from ui_dialogs import ask_multi_loop_details as dlg_multi
+        return dlg_multi(self.root)
 
     def ask_loop_control_details(self):
-        d = tk.Toplevel(self.root)
-        d.title("ตั้งค่าคำสั่ง วนลูป (Loop)")
-        d.geometry("320x240")
-        d.transient(self.root)
-        d.grab_set()
-        
-        result = {}
-        
-        tk.Label(d, text="1. จำนวนสเต็ปที่จะย้อนกลับไปทำซ้ำ:", font=("Helvetica", 10, "bold")).pack(pady=(15,0))
-        tk.Label(d, text="(เช่น ใส่ 2 เพื่อย้อนกลับไปทำ 2 คำสั่งล่าสุดซ้ำ)", fg="gray").pack()
-        entry_steps = tk.Entry(d, width=15)
-        entry_steps.insert(0, "2")
-        entry_steps.pack(pady=5)
-        
-        tk.Label(d, text="2. ระยะเวลาที่จะให้วนลูปทำงาน (วินาที):", font=("Helvetica", 10, "bold")).pack(pady=(10,0))
-        entry_sec = tk.Entry(d, width=15)
-        entry_sec.insert(0, "30")
-        entry_sec.pack(pady=5)
-        
-        def on_ok():
-            steps_val = entry_steps.get().strip()
-            sec_val = entry_sec.get().strip()
-            
-            if not steps_val.isdigit() or int(steps_val) < 1:
-                messagebox.showwarning("Error", "จำนวนสเต็ปต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป!", parent=d)
-                return
-                
-            if not sec_val.isdigit() or int(sec_val) < 1:
-                messagebox.showwarning("Error", "ระยะเวลาวินาทีต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป!", parent=d)
-                return
-                
-            result['steps'] = int(steps_val)
-            result['duration'] = int(sec_val)
-            d.destroy()
-            
-        def on_cancel():
-            d.destroy()
-            
-        btn_frame = tk.Frame(d)
-        btn_frame.pack(pady=15)
-        tk.Button(btn_frame, text="ตกลง (OK)", command=on_ok, bg="#C8E6C9", width=12).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text="ยกเลิก", command=on_cancel, bg="#FFCDD2", width=12).pack(side=tk.LEFT, padx=5)
-        
-        self.root.wait_window(d)
-        if 'steps' in result:
-            return result['steps'], result['duration']
-        return None
+        from ui_dialogs import ask_loop_control_details as dlg_loop
+        return dlg_loop(self.root)
 
     def save_macro(self):
-        steps = list(self.macro_listbox.get(0, tk.END))
-        if not steps:
-            messagebox.showwarning("Warning", "ไม่มีสเต็ปในคิวให้เซฟครับ")
-            return
-            
-        os.makedirs("macros", exist_ok=True)
-        filepath = filedialog.asksaveasfilename(
-            initialdir=os.path.join(os.getcwd(), "macros"),
-            title="Save Macro",
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json")]
-        )
-        if filepath:
-            try:
-                data = {
-                    "steps": steps,
-                    "recovery_steps": list(self.recovery_listbox.get(0, tk.END)),
-                    "timeout_mins": int(self.timeout_var.get()),
-                    "package_name": self.package_var.get().strip()
-                }
-                with open(filepath, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=4)
-                messagebox.showinfo("Success", "บันทึกคิวมาโครสำเร็จ!")
-            except Exception as e:
-                messagebox.showerror("Error", f"บันทึกไม่สำเร็จ: {e}")
+        from config_manager import save_macro as cfg_save
+        cfg_save(self.macro_listbox, self.recovery_listbox, self.timeout_var, self.package_var)
 
     def load_macro(self):
-        os.makedirs("macros", exist_ok=True)
-        filepath = filedialog.askopenfilename(
-            initialdir=os.path.join(os.getcwd(), "macros"),
-            title="Load Macro",
-            filetypes=[("JSON files", "*.json")]
-        )
-        if filepath:
-            try:
-                with open(filepath, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                self.macro_listbox.delete(0, tk.END)
-                if isinstance(data, list):
-                    for step in data:
-                        self.macro_listbox.insert(tk.END, step)
-                elif isinstance(data, dict):
-                    steps = data.get("steps", [])
-                    for step in steps:
-                        self.macro_listbox.insert(tk.END, step)
-                    
-                    self.timeout_var.set(str(data.get("timeout_mins", 5)))
-                    self.package_var.set(data.get("package_name", "com.devsisters.crg"))
-                    
-                    # โหลดคิวกู้คืน
-                    self.recovery_listbox.delete(0, tk.END)
-                    recovery_steps = data.get("recovery_steps", [])
-                    if recovery_steps:
-                        for step in recovery_steps:
-                            self.recovery_listbox.insert(tk.END, step)
-                    
-                messagebox.showinfo("Success", "โหลดคิวมาโครสำเร็จ!")
-            except Exception as e:
-                messagebox.showerror("Error", f"โหลดไม่สำเร็จ: {e}")
+        from config_manager import load_macro as cfg_load
+        cfg_load(self.macro_listbox, self.recovery_listbox, self.timeout_var, self.package_var)
 
 
 
@@ -1065,12 +789,12 @@ class CookieRunBotUI:
         try:
             # Method 1: dumpsys window
             focus_out = self.device.shell("dumpsys window | grep mCurrentFocus")
-            package = self.parse_package_from_string(focus_out)
+            package = parse_package_from_string(focus_out)
             
             # Method 2 fallback: dumpsys activity
             if not package:
                 resume_out = self.device.shell("dumpsys activity activities | grep mResumedActivity")
-                package = self.parse_package_from_string(resume_out)
+                package = parse_package_from_string(resume_out)
                 
             if package:
                 self.package_var.set(package)
@@ -1081,14 +805,7 @@ class CookieRunBotUI:
         except Exception as e:
             messagebox.showerror("Error", f"ดึงชื่อแพ็กเกจล้มเหลว: {e}")
 
-    def parse_package_from_string(self, text):
-        if not text: return None
-        import re
-        # Look for com.xxx.yyy/zzz or com.xxx.yyy/.zzz
-        match = re.search(r'([a-zA-Z0-9_]+\.[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)+)', text)
-        if match:
-            return match.group(1)
-        return None
+
 
     def connect_adb(self):
         try:
@@ -1254,151 +971,23 @@ class CookieRunBotUI:
             logging.error(f"Failed to write to bot_run.log: {e}")
 
     def check_lobby_reached(self):
-        # Find all templates starting with "Lobby" (e.g. Lobby 1.png, Lobby 3.png, Lobby 4.png)
-        lobby_files = glob.glob("templates/Lobby*.png")
-        if not lobby_files:
-            # Fallback if no files start with Lobby
-            val, pos = self.do_template_match_by_name("Lobby.png")
-            return val is not None and val >= 0.8
-            
-        for file_path in lobby_files:
-            name = os.path.basename(file_path)
-            val, pos = self.do_template_match_by_name(name)
-            if val is not None and val >= 0.8:
-                self.log_bot_activity(f"[Lobby Check] ตรวจพบหน้าล็อบบี้สำเร็จจากรูป '{name}' (ความแม่นยำ: {val*100:.1f}%)")
-                return True
-        return False
+        from vision import check_lobby_reached as vision_check
+        return vision_check(self.device, self.log_bot_activity)
 
     def do_template_match_by_name(self, template_name):
-        if not self.device: return None, None
-        template_path = os.path.join("templates", template_name)
-        if not os.path.exists(template_path):
-            return None, None
-            
-        screencap = self.device.screencap()
-        image_array = np.frombuffer(screencap, np.uint8)
-        screen_img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-        
-        template_array = np.fromfile(template_path, np.uint8)
-        template_img = cv2.imdecode(template_array, cv2.IMREAD_COLOR)
-        
-        config_path = os.path.join("templates", "config.json")
-        search_roi = None
-        if os.path.exists(config_path):
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config_data = json.load(f)
-                if template_name in config_data:
-                    c = config_data[template_name]
-                    pad = 20
-                    h_screen, w_screen = screen_img.shape[:2]
-                    x1, y1 = max(0, c["x1"] - pad), max(0, c["y1"] - pad)
-                    x2, y2 = min(w_screen, c["x2"] + pad), min(h_screen, c["y2"] + pad)
-                    search_roi = (x1, y1, x2, y2)
-        
-        if search_roi:
-            x1, y1, x2, y2 = search_roi
-            roi_img = screen_img[y1:y2, x1:x2]
-            result = cv2.matchTemplate(roi_img, template_img, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-            h, w = template_img.shape[:2]
-            center_x = max_loc[0] + x1 + w // 2
-            center_y = max_loc[1] + y1 + h // 2
-        else:
-            result = cv2.matchTemplate(screen_img, template_img, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-            h, w = template_img.shape[:2]
-            center_x = max_loc[0] + w // 2
-            center_y = max_loc[1] + h // 2
-            
-        return max_val, (center_x, center_y)
+        from vision import do_template_match_by_name as vision_do_match
+        return vision_do_match(self.device, template_name)
 
     def solve_minigame_action(self, detect_img="Bot check.png"):
-        if not self.device: return False
+        from vision import solve_minigame_action as vision_solve
         
-        attempt = 1
-        max_attempts = 10
-        
-        while attempt <= max_attempts and (self.macro_running or self.test_restart_running):
-            # Check if the minigame is still active
-            max_val, _ = self.do_template_match_by_name(detect_img)
-            if max_val is None or max_val < 0.8:
-                self.root.after(0, lambda: self.status_label.config(
-                    text="Macro: มินิเกมหายไปแล้ว (ผ่านสำเร็จ)!", fg="green"
-                ))
-                return True
-                
-            self.root.after(0, lambda att=attempt: self.status_label.config(
-                text=f"Macro: แก้ไขมินิเกม รอบที่ {att}...", fg="orange"
-            ))
+        def is_running():
+            return self.macro_running or self.test_restart_running
             
-            screencap = self.device.screencap()
-            image_array = np.frombuffer(screencap, np.uint8)
-            screen_img = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-            if screen_img is None:
-                return False
-                
-            orig_h, orig_w = screen_img.shape[:2]
+        def set_status(msg, color):
+            self.root.after(0, lambda: self.status_label.config(text=msg, fg=color))
             
-            # Resize screen_img to 1920x1080 for processing coordinates
-            if orig_w != 1920 or orig_h != 1080:
-                proc_img = cv2.resize(screen_img, (1920, 1080))
-            else:
-                proc_img = screen_img
-                
-            centers = [
-                (655, 449),  # Card 1
-                (949, 449),  # Card 2
-                (1243, 449), # Card 3
-                (655, 834),  # Card 4
-                (949, 834),  # Card 5
-                (1243, 834)  # Card 6
-            ]
-            
-            crops = []
-            for cx, cy in centers:
-                crop = proc_img[cy-100:cy+100, cx-80:cx+80]
-                crops.append(crop)
-                
-            grays = [cv2.cvtColor(c, cv2.COLOR_BGR2GRAY) for c in crops]
-            
-            diff_scores = []
-            for i in range(6):
-                total_diff = 0
-                for j in range(6):
-                    if i == j: continue
-                    err = np.sum((grays[i].astype("float") - grays[j].astype("float")) ** 2)
-                    err /= float(grays[i].shape[0] * grays[i].shape[1])
-                    total_diff += err
-                diff_scores.append((i, total_diff))
-                
-            sorted_by_diff = sorted(diff_scores, key=lambda x: x[1], reverse=True)
-            
-            click1_idx = sorted_by_diff[0][0]
-            click2_idx = sorted_by_diff[1][0]
-            
-            c1_x, c1_y = centers[click1_idx]
-            c2_x, c2_y = centers[click2_idx]
-            
-            # Scale coordinates if needed
-            if orig_w != 1920 or orig_h != 1080:
-                scale_x = orig_w / 1920.0
-                scale_y = orig_h / 1080.0
-                tap1_x, tap1_y = int(c1_x * scale_x), int(c1_y * scale_y)
-                tap2_x, tap2_y = int(c2_x * scale_x), int(c2_y * scale_y)
-            else:
-                tap1_x, tap1_y = c1_x, c1_y
-                tap2_x, tap2_y = c2_x, c2_y
-                
-            # Click the two different cards (short delay between clicks)
-            self.device.shell(f"input tap {tap1_x} {tap1_y}")
-            time.sleep(0.5)
-            self.device.shell(f"input tap {tap2_x} {tap2_y}")
-            
-            # Wait for animation/shuffle before checking again
-            time.sleep(1.0)
-            attempt += 1
-            
-        return False
+        return vision_solve(self.device, is_running, set_status, detect_img)
 
     def test_find(self):
         name = self.template_var.get()

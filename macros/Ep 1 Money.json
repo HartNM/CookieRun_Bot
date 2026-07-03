@@ -19,13 +19,17 @@
         "[Click] Mystery Box Open All.png",
         "[SkipNot:1] Mystery Box Comfirm.png",
         "[Click] Mystery Box Comfirm.png",
-        "[Loop-Control:7] Duration:20s"
+        "[Loop-Control:7] Duration:10s"
     ],
     "recovery_steps": [
         "[Force-Stop-Game]",
         "[Delay-Only] 2000ms",
         "[Launch-Game]",
-        "[Delay-Only] 10000ms",
+        "[Delay-Only] 15000ms",
+        "[SkipNot:3] Previous Results Confirm.png",
+        "[Click] Previous Results Confirm.png",
+        "[Click] Result Confirm.png",
+        "[Delay-Only] 1000ms",
         "[SkipNot:1] News Exit.png",
         "[Click] News Exit.png",
         "[Solve-Minigame] Bot check.png",
@@ -33,9 +37,8 @@
         "[Click] Mystery Box Open All.png",
         "[SkipNot:1] Mystery Box Comfirm.png",
         "[Click] Mystery Box Comfirm.png",
-        "[Loop-Control:7] Duration:20s"
+        "[Loop-Control:11] Duration:15s"
     ],
     "timeout_mins": 7,
-    "package_name": "com.devsisters.crg",
-    "stuck_action": "รีสตาร์ทเกม & เริ่มใหม่"
+    "package_name": "com.devsisters.crg"
 }
