@@ -127,7 +127,7 @@ class CookieRunBotUI:
         tk.Label(self.action_frame, text="Action:").pack(side=tk.LEFT, padx=(5, 0))
         self.macro_action_var = tk.StringVar(value="[Click]")
         self.macro_action_combo = ttk.Combobox(self.action_frame, textvariable=self.macro_action_var, state="readonly", width=12)
-        self.macro_action_combo['values'] = ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]", "[Skip-If]", "[Skip-IfNot]", "[Break]"]
+        self.macro_action_combo['values'] = ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]", "[Skip-If]", "[Skip-IfNot]"]
         self.macro_action_combo.pack(side=tk.LEFT, padx=5)
         
         self.add_step_btn = tk.Button(f_add, text="เพิ่มสเต็ป", command=self.add_macro_step, bg="#E0E0E0")
@@ -210,7 +210,7 @@ class CookieRunBotUI:
         tk.Label(self.rec_action_frame, text="Action:").pack(side=tk.LEFT, padx=(5, 0))
         self.recovery_action_var = tk.StringVar(value="[Click]")
         self.recovery_action_combo = ttk.Combobox(self.rec_action_frame, textvariable=self.recovery_action_var, state="readonly", width=12)
-        self.recovery_action_combo['values'] = ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]", "[Skip-If]", "[Skip-IfNot]", "[Break]"]
+        self.recovery_action_combo['values'] = ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]", "[Skip-If]", "[Skip-IfNot]"]
         self.recovery_action_combo.pack(side=tk.LEFT, padx=5)
         
         self.rec_add_step_btn = tk.Button(f_add, text="เพิ่มสเต็ป", command=self.add_recovery_step, bg="#E0E0E0")
@@ -240,7 +240,7 @@ class CookieRunBotUI:
 
     def on_recovery_combo_selected(self, event=None):
         val = self.recovery_template_var.get()
-        if val in ["-- เพิ่มเวลาหน่วง (Delay) --", "-- แก้ไขมินิเกม (Solve Minigame) --", "-- วนลูป (Loop) --", "-- ปิดแอปเกม (Force Stop) --", "-- เปิดแอปเกม (Launch Game) --", "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --"]:
+        if val in ["-- เพิ่มเวลาหน่วง (Delay) --", "-- แก้ไขมินิเกม (Solve Minigame) --", "-- วนลูป (Loop) --", "-- ปิดแอปเกม (Force Stop) --", "-- เปิดแอปเกม (Launch Game) --", "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --", "-- หยุดมาโคร (Break) --", "-- พิมพ์ข้อความ (Type Text) --", "-- กด Enter --"]:
             self.rec_action_frame.pack_forget()
         else:
             self.rec_action_frame.pack(side=tk.LEFT)
@@ -276,8 +276,11 @@ class CookieRunBotUI:
         if val == "-- วนลูป (Loop) --":
             loop_info = self.ask_loop_control_details()
             if loop_info:
-                steps_count, loop_sec = loop_info
-                self.recovery_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Duration:{loop_sec}s")
+                steps_count, loop_mode, loop_val = loop_info
+                if loop_mode == 'duration':
+                    self.recovery_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Duration:{loop_val}s")
+                else:
+                    self.recovery_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Count:{loop_val}")
             return
             
         if val == "-- ปิดแอปเกม (Force Stop) --":
@@ -292,14 +295,30 @@ class CookieRunBotUI:
             self.recovery_listbox.insert(tk.END, "[Check-Lobby]")
             return
             
+        if val == "-- หยุดมาโคร (Break) --":
+            self.recovery_listbox.insert(tk.END, "[Break]")
+            return
+            
+        if val == "-- พิมพ์ข้อความ (Type Text) --":
+            text_val = self.ask_type_text_details()
+            if text_val is not None:
+                escaped = text_val.replace(' ', '%s')
+                self.recovery_listbox.insert(tk.END, f"[Type-Text] {escaped}")
+            return
+            
+        if val == "-- กด Enter --":
+            self.recovery_listbox.insert(tk.END, "[Press-Enter]")
+            return
+            
         if val:
             if act in ["[Spam-Wait]", "[Spam-Click]"]:
                 spam_info = self.ask_spam_wait_details()
                 if not spam_info or not spam_info[0]: return
-                spam_img, spam_delay = spam_info
+                spam_img, spam_delay, rand_delay, wait_targets = spam_info
                 if not spam_img.endswith(".png") and "," not in spam_img: 
                     spam_img += ".png"
-                self.recovery_listbox.insert(tk.END, f"{act} [{spam_img}] [S:{spam_delay}] {val}")
+                wait_str = "|".join(wait_targets)
+                self.recovery_listbox.insert(tk.END, f"{act} [{spam_img}] [S:{spam_delay}] [R:{rand_delay}] {wait_str}")
             elif act == "[Skip-If]":
                 skip_count = simpledialog.askinteger("Skip Count", "ถ้าเจอภาพนี้ ต้องการให้ข้ามไปกี่สเต็ป?\n(เช่น ใส่ 2 เพื่อข้าม 2 คำสั่งถัดไป)", parent=self.root, minvalue=1, maxvalue=50)
                 if skip_count:
@@ -309,7 +328,20 @@ class CookieRunBotUI:
                 if skip_count:
                     self.recovery_listbox.insert(tk.END, f"[SkipNot:{skip_count}] {val}")
             else:
-                self.recovery_listbox.insert(tk.END, f"{act} {val}")
+                if act in ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]"]:
+                    default_d = 2000 if act in ["[Click]", "[Spam-Click]"] else 500
+                    custom_delay = simpledialog.askinteger(
+                        "กำหนด Delay หลัง Action",
+                        f"ต้องการหน่วงเวลาหลัง '{act}' กี่มิลลิวินาที?\n"
+                        f"(ค่าเริ่มต้น = {default_d} ms, กด Cancel เพื่อใช้ค่าเริ่มต้น)",
+                        parent=self.root, minvalue=0, maxvalue=60000, initialvalue=default_d
+                    )
+                    if custom_delay is not None and custom_delay != default_d:
+                        self.recovery_listbox.insert(tk.END, f"{act} [D:{custom_delay}] {val}")
+                    else:
+                        self.recovery_listbox.insert(tk.END, f"{act} {val}")
+                else:
+                    self.recovery_listbox.insert(tk.END, f"{act} {val}")
 
     def remove_recovery_step(self):
         sel = self.recovery_listbox.curselection()
@@ -373,7 +405,10 @@ class CookieRunBotUI:
             "-- วนลูป (Loop) --",
             "-- ปิดแอปเกม (Force Stop) --",
             "-- เปิดแอปเกม (Launch Game) --",
-            "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --"
+            "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --",
+            "-- หยุดมาโคร (Break) --",
+            "-- พิมพ์ข้อความ (Type Text) --",
+            "-- กด Enter --"
         ] + names
         self.macro_combo['values'] = macro_opts
         if hasattr(self, 'recovery_combo'):
@@ -396,7 +431,7 @@ class CookieRunBotUI:
 
     def on_macro_combo_selected(self, event=None):
         val = self.macro_template_var.get()
-        if val in ["-- เพิ่มเวลาหน่วง (Delay) --", "-- แก้ไขมินิเกม (Solve Minigame) --", "-- วนลูป (Loop) --", "-- ปิดแอปเกม (Force Stop) --", "-- เปิดแอปเกม (Launch Game) --", "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --"]:
+        if val in ["-- เพิ่มเวลาหน่วง (Delay) --", "-- แก้ไขมินิเกม (Solve Minigame) --", "-- วนลูป (Loop) --", "-- ปิดแอปเกม (Force Stop) --", "-- เปิดแอปเกม (Launch Game) --", "-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --", "-- หยุดมาโคร (Break) --", "-- พิมพ์ข้อความ (Type Text) --", "-- กด Enter --"]:
             self.action_frame.pack_forget()
         else:
             self.action_frame.pack(side=tk.LEFT)
@@ -438,8 +473,11 @@ class CookieRunBotUI:
         if val == "-- วนลูป (Loop) --":
             loop_info = self.ask_loop_control_details()
             if loop_info:
-                steps_count, loop_sec = loop_info
-                self.macro_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Duration:{loop_sec}s")
+                steps_count, loop_mode, loop_val = loop_info
+                if loop_mode == 'duration':
+                    self.macro_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Duration:{loop_val}s")
+                else:
+                    self.macro_listbox.insert(tk.END, f"[Loop-Control:{steps_count}] Count:{loop_val}")
             return
             
         if val == "-- ปิดแอปเกม (Force Stop) --":
@@ -454,14 +492,31 @@ class CookieRunBotUI:
             self.macro_listbox.insert(tk.END, "[Check-Lobby]")
             return
             
+        if val == "-- หยุดมาโคร (Break) --":
+            self.macro_listbox.insert(tk.END, "[Break]")
+            return
+            
+        if val == "-- พิมพ์ข้อความ (Type Text) --":
+            text_val = self.ask_type_text_details()
+            if text_val is not None:
+                # escape spaces for ADB input text
+                escaped = text_val.replace(' ', '%s')
+                self.macro_listbox.insert(tk.END, f"[Type-Text] {escaped}")
+            return
+            
+        if val == "-- กด Enter --":
+            self.macro_listbox.insert(tk.END, "[Press-Enter]")
+            return
+            
         if val:
             if act in ["[Spam-Wait]", "[Spam-Click]"]:
                 spam_info = self.ask_spam_wait_details()
                 if not spam_info or not spam_info[0]: return
-                spam_img, spam_delay = spam_info
+                spam_img, spam_delay, rand_delay, wait_targets = spam_info
                 if not spam_img.endswith(".png") and "," not in spam_img: 
                     spam_img += ".png"
-                self.macro_listbox.insert(tk.END, f"{act} [{spam_img}] [S:{spam_delay}] {val}")
+                wait_str = "|".join(wait_targets)
+                self.macro_listbox.insert(tk.END, f"{act} [{spam_img}] [S:{spam_delay}] [R:{rand_delay}] {wait_str}")
             elif act == "[Skip-If]":
                 skip_count = simpledialog.askinteger("Skip Count", "ถ้าเจอภาพนี้ ต้องการให้ข้ามไปกี่สเต็ป?\n(เช่น ใส่ 2 เพื่อข้าม 2 คำสั่งถัดไป)", parent=self.root, minvalue=1, maxvalue=50)
                 if skip_count:
@@ -475,7 +530,20 @@ class CookieRunBotUI:
                 if loop_ms:
                     self.macro_listbox.insert(tk.END, f"[Loop:{loop_ms}] {val}")
             else:
-                self.macro_listbox.insert(tk.END, f"{act} {val}")
+                if act in ["[Click]", "[Wait]", "[Spam-Wait]", "[Spam-Click]"]:
+                    default_d = 2000 if act in ["[Click]", "[Spam-Click]"] else 500
+                    custom_delay = simpledialog.askinteger(
+                        "กำหนด Delay หลัง Action",
+                        f"ต้องการหน่วงเวลาหลัง '{act}' กี่มิลลิวินาที?\n"
+                        f"(ค่าเริ่มต้น = {default_d} ms, กด Cancel เพื่อใช้ค่าเริ่มต้น)",
+                        parent=self.root, minvalue=0, maxvalue=60000, initialvalue=default_d
+                    )
+                    if custom_delay is not None and custom_delay != default_d:
+                        self.macro_listbox.insert(tk.END, f"{act} [D:{custom_delay}] {val}")
+                    else:
+                        self.macro_listbox.insert(tk.END, f"{act} {val}")
+                else:
+                    self.macro_listbox.insert(tk.END, f"{act} {val}")
             
     def remove_macro_step(self):
         sel = self.macro_listbox.curselection()
@@ -539,6 +607,10 @@ class CookieRunBotUI:
         from ui_dialogs import ask_loop_control_details as dlg_loop
         return dlg_loop(self.root)
 
+    def ask_type_text_details(self):
+        from ui_dialogs import ask_type_text_details as dlg_type
+        return dlg_type(self.root)
+
     def save_macro(self):
         from config_manager import save_macro as cfg_save
         cfg_save(self.macro_listbox, self.recovery_listbox, self.timeout_var, self.package_var)
@@ -571,7 +643,8 @@ class CookieRunBotUI:
         rec_idx = 0
         recovery_failed = False
         recovery_start = time.time()
-        rec_loop_start_times = {}
+        rec_loop_start_times = {}  # สำหรับ Duration mode
+        rec_loop_counts = {}        # สำหรับ Count mode
         
         while rec_idx < len(recovery_steps) and is_running():
             rec_step = recovery_steps[rec_idx]
@@ -651,22 +724,40 @@ class CookieRunBotUI:
             if rec_step.startswith("[Loop-Control:"):
                 try:
                     steps_to_jump = int(rec_step.split(":")[1].split("]")[0])
-                    duration_sec = int(rec_step.split("Duration:")[1].replace("s", ""))
-                    
-                    if rec_idx not in rec_loop_start_times:
-                        rec_loop_start_times[rec_idx] = time.time()
-                        
-                    elapsed_loop = time.time() - rec_loop_start_times[rec_idx]
-                    if elapsed_loop < duration_sec:
-                        remaining = duration_sec - elapsed_loop
-                        set_status(f"กู้คืน: วนลูปย้อนกลับ {steps_to_jump} สเต็ป (เหลือ {remaining:.1f} วิ)...", "blue")
-                        time.sleep(0.05) # หน่วงนิดเดียวเพื่อไม่ให้กิน CPU หนักเกิน
-                        target_idx = max(0, rec_idx - steps_to_jump)
-                        rec_idx = target_idx
-                        continue
+                    is_count_mode = "Count:" in rec_step
+
+                    if is_count_mode:
+                        # โหมดนับรอบ
+                        max_count = int(rec_step.split("Count:")[1])
+                        if rec_idx not in rec_loop_counts:
+                            rec_loop_counts[rec_idx] = 0
+                        if rec_loop_counts[rec_idx] < max_count:
+                            rec_loop_counts[rec_idx] += 1
+                            done = rec_loop_counts[rec_idx]
+                            set_status(f"กู้คืน: วนลูปย้อนกลับ {steps_to_jump} สเต็ป (รอบ {done}/{max_count})...", "blue")
+                            time.sleep(0.05)
+                            target_idx = max(0, rec_idx - steps_to_jump)
+                            rec_idx = target_idx
+                            continue
+                        else:
+                            set_status("กู้คืน: ครบจำนวนรอบวนลูปแล้ว ไปต่อ...", "green")
+                            del rec_loop_counts[rec_idx]
                     else:
-                        set_status("กู้คืน: หมดเวลาวนลูป ไปต่อ...", "green")
-                        del rec_loop_start_times[rec_idx]
+                        # โหมดตามเวลา
+                        duration_sec = int(rec_step.split("Duration:")[1].replace("s", ""))
+                        if rec_idx not in rec_loop_start_times:
+                            rec_loop_start_times[rec_idx] = time.time()
+                        elapsed_loop = time.time() - rec_loop_start_times[rec_idx]
+                        if elapsed_loop < duration_sec:
+                            remaining = duration_sec - elapsed_loop
+                            set_status(f"กู้คืน: วนลูปย้อนกลับ {steps_to_jump} สเต็ป (เหลือ {remaining:.1f} วิ)...", "blue")
+                            time.sleep(0.05)
+                            target_idx = max(0, rec_idx - steps_to_jump)
+                            rec_idx = target_idx
+                            continue
+                        else:
+                            set_status("กู้คืน: หมดเวลาวนลูป ไปต่อ...", "green")
+                            del rec_loop_start_times[rec_idx]
                 except Exception as e:
                     logging.error(f"Recovery loop control failed: {e}")
                 rec_idx += 1
@@ -808,45 +899,113 @@ class CookieRunBotUI:
 
 
     def connect_adb(self):
-        try:
-            self.status_label.config(text="Status: Starting ADB...", fg="orange")
-            self.root.update()
-            ensure_adb_server()
-            
-            client = AdbClient(host="127.0.0.1", port=5037)
-            client.remote_connect("127.0.0.1", 7555)
-            client.remote_connect("127.0.0.1", 16384)
-            
-            devices = client.devices()
-            if len(devices) == 0:
-                self.status_label.config(text="Status: No device found", fg="red")
-                return
-            
-            self.device = devices[0]
-            serial = self.device.serial
-            
+        # Disable button to prevent double-clicks while connecting
+        self.connect_btn.config(state=tk.DISABLED)
+        self.status_label.config(text="Status: Starting ADB...", fg="orange")
+
+        def _do_connect():
+            import socket
+            from concurrent.futures import ThreadPoolExecutor, as_completed
             try:
-                wm_size = self.device.shell("wm size")
-                if "1920x1080" not in wm_size and "1080x1920" not in wm_size:
-                    messagebox.showwarning("เตือนขนาดจอ", "ความละเอียดไม่ใช่ 1080p (1920x1080)\nกรุณาตั้งค่า MuMu เป็น 1080p")
-            except Exception:
-                pass
-            
-            self.status_label.config(text=f"Status: Connected ({serial})", fg="green")
-            self.create_template_btn.config(state=tk.NORMAL)
-            self.test_find_btn.config(state=tk.NORMAL)
-            self.play_btn.config(state=tk.NORMAL)
-            self.start_macro_btn.config(state=tk.NORMAL)
-            if hasattr(self, 'kill_test_btn'): self.kill_test_btn.config(state=tk.NORMAL)
-            if hasattr(self, 'launch_test_btn'): self.launch_test_btn.config(state=tk.NORMAL)
-            if hasattr(self, 'restart_test_btn'): self.restart_test_btn.config(state=tk.NORMAL)
-            if hasattr(self, 'detect_pkg_btn'): self.detect_pkg_btn.config(state=tk.NORMAL)
-            self.refresh_templates()
-            
-        except Exception as e:
-            logging.error(traceback.format_exc())
-            self.status_label.config(text="Status: Connection Error", fg="red")
-            messagebox.showerror("Error", f"เชื่อมต่อไม่สำเร็จ:\n{e}")
+                ensure_adb_server()
+
+                client = AdbClient(host="127.0.0.1", port=5037)
+
+                # MuMu Player 12: instance 0-15 ใช้ port 16384 + (instance_index * 32)
+                mumu12_ports = [16384 + i * 32 for i in range(16)]
+                ports_to_try = (
+                    list(range(7555, 7600, 2)) +           # MuMu Player 6 / NoxPlayer
+                    list(range(5554, 5600, 2)) +            # LDPlayer / stock emulator
+                    mumu12_ports +                          # MuMu Player 12 (instance 0-15)
+                    list(range(21503, 21600, 10)) +         # BlueStacks 5
+                    [62001, 62025, 62026, 62027, 62028] +   # NoxPlayer
+                    list(range(6555, 6600, 2))              # MEmu / other
+                )
+
+                def _try_connect(port):
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.3):
+                            pass
+                        return port
+                    except Exception:
+                        return None
+
+                with ThreadPoolExecutor(max_workers=32) as executor:
+                    futures = {executor.submit(_try_connect, p): p for p in ports_to_try}
+                    for future in as_completed(futures):
+                        port = future.result()
+                        if port is not None:
+                            try:
+                                client.remote_connect("127.0.0.1", port)
+                            except Exception:
+                                pass
+
+                devices = client.devices()
+
+                if len(devices) == 0:
+                    def _no_device():
+                        self.connect_btn.config(state=tk.NORMAL)
+                        self.status_label.config(text="Status: No device found", fg="red")
+                        messagebox.showwarning("ไม่พบอุปกรณ์", "ไม่พบอุปกรณ์ ADB ที่เชื่อมต่ออยู่\nกรุณาเปิด Emulator แล้วลองใหม่")
+                    self.root.after(0, _no_device)
+                    return
+
+                if len(devices) == 1:
+                    chosen_idx = 0
+                    chosen = devices[0]
+                    self.root.after(0, lambda: _finish(chosen))
+                else:
+                    # Device selection must happen on UI thread
+                    def _ask():
+                        from ui_dialogs import ask_select_device
+                        idx = ask_select_device(self.root, devices)
+                        if idx is None:
+                            self.connect_btn.config(state=tk.NORMAL)
+                            self.status_label.config(text="Status: Cancelled", fg="gray")
+                            return
+                        _finish(devices[idx])
+                    self.root.after(0, _ask)
+
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                def _err(err=e):
+                    self.connect_btn.config(state=tk.NORMAL)
+                    self.status_label.config(text="Status: Connection Error", fg="red")
+                    messagebox.showerror("Error", f"เชื่อมต่อไม่สำเร็จ:\n{err}")
+                self.root.after(0, _err)
+
+        def _finish(chosen):
+            try:
+                self.device = chosen
+                serial = self.device.serial
+
+                try:
+                    wm_size = self.device.shell("wm size")
+                    if "1920x1080" not in wm_size and "1080x1920" not in wm_size:
+                        messagebox.showwarning("เตือนขนาดจอ", "ความละเอียดไม่ใช่ 1080p (1920x1080)\nกรุณาตั้งค่า Emulator เป็น 1080p")
+                except Exception:
+                    pass
+
+                self.status_label.config(text=f"Status: Connected ({serial})", fg="green")
+                self.connect_btn.config(state=tk.NORMAL)
+                self.create_template_btn.config(state=tk.NORMAL)
+                self.test_find_btn.config(state=tk.NORMAL)
+                self.play_btn.config(state=tk.NORMAL)
+                self.start_macro_btn.config(state=tk.NORMAL)
+                if hasattr(self, 'kill_test_btn'): self.kill_test_btn.config(state=tk.NORMAL)
+                if hasattr(self, 'launch_test_btn'): self.launch_test_btn.config(state=tk.NORMAL)
+                if hasattr(self, 'restart_test_btn'): self.restart_test_btn.config(state=tk.NORMAL)
+                if hasattr(self, 'detect_pkg_btn'): self.detect_pkg_btn.config(state=tk.NORMAL)
+                self.refresh_templates()
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                self.connect_btn.config(state=tk.NORMAL)
+                self.status_label.config(text="Status: Connection Error", fg="red")
+                messagebox.showerror("Error", f"เชื่อมต่อไม่สำเร็จ:\n{e}")
+
+        import threading
+        threading.Thread(target=_do_connect, daemon=True).start()
+
 
     def create_template(self):
         if not self.device: return
@@ -1041,7 +1200,8 @@ class CookieRunBotUI:
     def macro_worker(self, steps):
         try:
             loop_count = 1
-            self.loop_start_times = {} # เก็บเวลาเริ่มรันของสเต็ปวนลูปแต่ละดัชนี
+            self.loop_start_times = {} # เก็บเวลาเริ่มรันของสเต็ปวนลูปแต่ละดัชนี (Duration mode)
+            self.loop_counts = {}       # เก็บจำนวนรอบที่รันแล้วของสเต็ปวนลูปแต่ละดัชนี (Count mode)
             while self.macro_running: # ลูปทำงานแบบ Infinite จนกว่าจะกด Stop
                 i = 0
                 while i < len(steps) and self.macro_running:
@@ -1060,32 +1220,48 @@ class CookieRunBotUI:
                         i += 1
                         continue
                         
-                    # -- จัดการโหมด วนลูปย้อนกลับตามระยะเวลา (Loop Control by Duration) --
+                    # -- จัดการโหมด วนลูปย้อนกลับ (Loop Control: Duration / Count) --
                     if step_item.startswith("[Loop-Control:"):
                         try:
-                            # รูปแบบคำสั่ง: [Loop-Control:2] Duration:30s
                             steps_to_jump = int(step_item.split(":")[1].split("]")[0])
-                            duration_sec = int(step_item.split("Duration:")[1].replace("s", ""))
-                            
-                            # บันทึกเวลาเริ่มต้นของสเต็ปนี้ หากเป็นการเข้าถึงครั้งแรก
-                            if i not in self.loop_start_times:
-                                self.loop_start_times[i] = time.time()
-                                
-                            elapsed_loop = time.time() - self.loop_start_times[i]
-                            if elapsed_loop < duration_sec:
-                                remaining = duration_sec - elapsed_loop
-                                self.root.after(0, lambda lc=loop_count, s=steps_to_jump, el=elapsed_loop, rem=remaining: self.status_label.config(
-                                    text=f"Macro [รอบ {lc}]: วนลูปย้อนกลับ {s} สเต็ป (รันแล้ว {el:.1f}/{duration_sec} วิ, เหลือ {rem:.1f} วิ)...", fg="blue"
-                                ))
-                                time.sleep(0.05) # ลดการหน่วงเวลาเพื่อให้ลูปทำงานเร็วขึ้น
-                                target_idx = max(0, i - steps_to_jump)
-                                i = target_idx - 1
+                            is_count_mode = "Count:" in step_item
+
+                            if is_count_mode:
+                                # โหมดนับรอบ: [Loop-Control:2] Count:5
+                                max_count = int(step_item.split("Count:")[1])
+                                if i not in self.loop_counts:
+                                    self.loop_counts[i] = 0
+                                if self.loop_counts[i] < max_count:
+                                    self.loop_counts[i] += 1
+                                    done = self.loop_counts[i]
+                                    self.root.after(0, lambda lc=loop_count, s=steps_to_jump, d=done, mx=max_count: self.status_label.config(
+                                        text=f"Macro [รอบ {lc}]: วนลูปย้อนกลับ {s} สเต็ป (รอบ {d}/{mx})...", fg="blue"
+                                    ))
+                                    time.sleep(0.05)
+                                    i = max(0, i - steps_to_jump) - 1
+                                else:
+                                    self.root.after(0, lambda lc=loop_count: self.status_label.config(
+                                        text=f"Macro [รอบ {lc}]: ครบจำนวนรอบวนลูปแล้ว ไปต่อ...", fg="green"
+                                    ))
+                                    del self.loop_counts[i]
                             else:
-                                # เลยกำหนดระยะเวลาวนลูปแล้ว ให้ข้ามการวนลูปไปขั้นตอนต่อไป
-                                self.root.after(0, lambda lc=loop_count: self.status_label.config(
-                                    text=f"Macro [รอบ {lc}]: หมดระยะเวลาวนลูปแล้ว ไปต่อ...", fg="green"
-                                ))
-                                del self.loop_start_times[i] # ลบเวลาเริ่มต้นเพื่อให้รอบการรันหลักใหม่เริ่มนับหนึ่งใหม่
+                                # โหมดตามเวลา: [Loop-Control:2] Duration:30s
+                                duration_sec = int(step_item.split("Duration:")[1].replace("s", ""))
+                                if i not in self.loop_start_times:
+                                    self.loop_start_times[i] = time.time()
+                                elapsed_loop = time.time() - self.loop_start_times[i]
+                                if elapsed_loop < duration_sec:
+                                    remaining = duration_sec - elapsed_loop
+                                    self.root.after(0, lambda lc=loop_count, s=steps_to_jump, el=elapsed_loop, rem=remaining: self.status_label.config(
+                                        text=f"Macro [รอบ {lc}]: วนลูปย้อนกลับ {s} สเต็ป (รันแล้ว {el:.1f}/{duration_sec} วิ, เหลือ {rem:.1f} วิ)...", fg="blue"
+                                    ))
+                                    time.sleep(0.05)
+                                    i = max(0, i - steps_to_jump) - 1
+                                else:
+                                    self.root.after(0, lambda lc=loop_count: self.status_label.config(
+                                        text=f"Macro [รอบ {lc}]: หมดระยะเวลาวนลูปแล้ว ไปต่อ...", fg="green"
+                                    ))
+                                    del self.loop_start_times[i]
                         except Exception as e:
                             logging.error(f"Loop control parser failed: {e}")
                         i += 1
@@ -1145,7 +1321,7 @@ class CookieRunBotUI:
                             ))
                             time.sleep(1.0)
                         else:
-                            self.log_bot_activity(f"[รอบที่ {loop_count}] หมดเวลารอหน้าล็อบบี้")
+                            pass
                         i += 1
                         continue
                     
@@ -1166,7 +1342,6 @@ class CookieRunBotUI:
                             self.root.after(0, lambda lc=loop_count: self.status_label.config(
                                 text=f"Macro [รอบ {lc}]: ตรวจพบมินิเกม! กำลังแก้ไข...", fg="orange"
                             ))
-                            time.sleep(1.0)
                             
                             try:
                                 success = self.solve_minigame_action(detect_img)
@@ -1186,18 +1361,54 @@ class CookieRunBotUI:
                                 self.root.after(0, lambda lc=loop_count, e=ex: self.status_label.config(
                                     text=f"Macro [รอบ {lc}]: เกิดข้อผิดพลาด: {e}", fg="red"
                                 ))
-                            time.sleep(3.0)
                         else:
                             self.root.after(0, lambda lc=loop_count: self.status_label.config(
                                 text=f"Macro [รอบ {lc}]: ไม่พบมินิเกม, ข้ามไป...", fg="green"
                             ))
-                            time.sleep(0.2)
                         
                         i += 1
                         continue
+
+                    # -- จัดการโหมด พิมพ์ข้อความ (Type Text) --
+                    if step_item.startswith("[Type-Text]"):
+                        parts_t = step_item.split(" ", 1)
+                        text_to_type = parts_t[1].strip() if len(parts_t) == 2 else ""
+                        self.root.after(0, lambda lc=loop_count, tx=text_to_type: self.status_label.config(
+                            text=f"Macro [รอบ {lc}]: พิมพ์ข้อความ '{tx}'...", fg="blue"
+                        ))
+                        if self.device and text_to_type:
+                            try:
+                                self.device.shell(f"input text {text_to_type}")
+                            except Exception as ex:
+                                logging.error(f"Type-Text error: {ex}")
+                        time.sleep(0.5)
+                        i += 1
+                        continue
+
+                    # -- จัดการโหมด กด Enter --
+                    if step_item.startswith("[Press-Enter]"):
+                        self.root.after(0, lambda lc=loop_count: self.status_label.config(
+                            text=f"Macro [รอบ {lc}]: กด Enter...", fg="blue"
+                        ))
+                        if self.device:
+                            try:
+                                self.device.shell("input keyevent 66")
+                            except Exception as ex:
+                                logging.error(f"Press-Enter error: {ex}")
+                        time.sleep(0.5)
+                        i += 1
+                        continue
                     
+                    # -- จัดการโหมด [Break] แบบ standalone (ไม่มีภาพ — หยุดทันที) --
+                    if step_item.strip() == "[Break]":
+                        self.root.after(0, lambda lc=loop_count: self.status_label.config(
+                            text=f"Macro [รอบ {lc}]: คำสั่ง [Break] — หยุดมาโครทันที!", fg="red"
+                        ))
+                        self.macro_running = False
+                        break
+
                     parts = step_item.split(" ", 1)
-                    if len(parts) != 2: 
+                    if len(parts) != 2:
                         i += 1
                         continue
                     action, rest = parts[0], parts[1]
@@ -1224,7 +1435,18 @@ class CookieRunBotUI:
                                     pass
                                 rest = rest[e_idx+1:].strip()
                                 
-                    step_name = rest
+                        spam_random = 0
+                        if rest.startswith("[R:"):
+                            e_idx = rest.find("]")
+                            if e_idx != -1:
+                                try:
+                                    spam_random = int(rest[3:e_idx])
+                                except ValueError:
+                                    pass
+                                rest = rest[e_idx+1:].strip()
+                                
+                    step_name = rest  # อาจมี | คั่นหลายภาพ
+                    step_names = [s.strip() for s in step_name.split("|") if s.strip()]  # list ของภาพที่รอ
                     
                     # Parse optional Delay [D:ms]
                     if rest.startswith("[D:"):
@@ -1235,6 +1457,7 @@ class CookieRunBotUI:
                             except ValueError:
                                 pass
                             step_name = rest[end_idx+1:].strip()
+                            step_names = [s.strip() for s in step_name.split("|") if s.strip()]
                     
                     # -- จัดการโหมด Skip-If --
                     if action.startswith("[Skip:"):
@@ -1273,7 +1496,9 @@ class CookieRunBotUI:
                         continue
                         
                     # -- โหมดอื่นๆ (Click, Wait) --
-                    self.root.after(0, lambda sn=step_name, lc=loop_count, act=action: self.status_label.config(
+                    # step_name_display = ชื่อแรกสำหรับแสดงใน status
+                    step_name_display = step_names[0] if step_names else step_name
+                    self.root.after(0, lambda sn=step_name_display, lc=loop_count, act=action: self.status_label.config(
                         text=f"Macro [รอบ {lc}]: {act} รอภาพ '{sn}'...", fg="blue"
                     ))
                     
@@ -1313,12 +1538,14 @@ class CookieRunBotUI:
                                     except: pass
                                     
                             if tap_cmd:
-                                def spammer(cmd, interval):
+                                def spammer(cmd, interval, rand_interval):
+                                    import random
                                     while self.spam_running and self.macro_running:
                                         self.device.shell(cmd)
-                                        time.sleep(interval / 1000.0)
+                                        added_delay = random.randint(0, rand_interval) if rand_interval > 0 else 0
+                                        time.sleep((interval + added_delay) / 1000.0)
                                         
-                                threading.Thread(target=spammer, args=(tap_cmd, spam_interval), daemon=True).start()
+                                threading.Thread(target=spammer, args=(tap_cmd, spam_interval, spam_random), daemon=True).start()
                                 self.root.after(0, lambda sn=step_name, sp=spam_target: self.status_label.config(
                                     text=f"Macro: เริ่มสแปมพิกัด '{sp}' เบื้องหลังแล้ว! กำลังรอภาพ '{sn}'...", fg="orange"
                                 ))
@@ -1330,45 +1557,53 @@ class CookieRunBotUI:
                         # Update elapsed waiting status
                         elapsed = time.time() - step_start_time
                         if action in ["[Spam-Wait]", "[Spam-Click]"]:
-                            self.root.after(0, lambda sn=step_name, lc=loop_count, sp=spam_target or "", el=elapsed, tl=timeout_limit: self.status_label.config(
+                            names_display = "|".join(step_names) if step_names else step_name
+                            self.root.after(0, lambda sn=names_display, lc=loop_count, sp=spam_target or "", el=elapsed, tl=timeout_limit: self.status_label.config(
                                 text=f"Macro [รอบ {lc}]: สแปม '{sp}' รอภาพ '{sn}'... ({int(el)}/{tl} วิ)", fg="orange"
                             ))
                         else:
-                            self.root.after(0, lambda sn=step_name, lc=loop_count, act=action, el=elapsed, tl=timeout_limit: self.status_label.config(
+                            step_name_display = step_names[0] if step_names else step_name
+                            self.root.after(0, lambda sn=step_name_display, lc=loop_count, act=action, el=elapsed, tl=timeout_limit: self.status_label.config(
                                 text=f"Macro [รอบ {lc}]: {act} รอภาพ '{sn}'... ({int(el)}/{tl} วิ)", fg="blue"
                             ))
 
-                        max_val, pos = self.do_template_match_by_name(step_name)
+                        # ตรวจสอบทุกภาพใน step_names — เจอภาพใดก็ถือว่าผ่าน
+                        max_val, pos, matched_name = None, None, None
+                        for sn in (step_names if step_names else [step_name]):
+                            mv, p = self.do_template_match_by_name(sn)
+                            if mv is not None and mv >= 0.8:
+                                max_val, pos, matched_name = mv, p, sn
+                                break
                         
                         if max_val is not None and max_val >= 0.8:
                             self.spam_running = False # หยุด Thread สแปม
+                            _found = matched_name or step_name
                             
                             if action == "[Click]":
                                 self.device.shell(f"input tap {pos[0]} {pos[1]}")
-                                self.root.after(0, lambda sn=step_name: self.status_label.config(
+                                self.root.after(0, lambda sn=_found: self.status_label.config(
                                     text=f"Macro: คลิก '{sn}' แล้ว!", fg="green"
                                 ))
                                 time.sleep(delay_ms / 1000.0 if rest.startswith("[D:") else 2.0)
                             elif action == "[Spam-Click]":
                                 self.device.shell(f"input tap {pos[0]} {pos[1]}")
-                                self.root.after(0, lambda sn=step_name: self.status_label.config(
+                                self.root.after(0, lambda sn=_found: self.status_label.config(
                                     text=f"Macro: เจอภาพ '{sn}' สั่งหยุดสแปมและคลิกภาพแล้ว!", fg="green"
                                 ))
                                 time.sleep(delay_ms / 1000.0 if rest.startswith("[D:") else 2.0)
                             elif action == "[Spam-Wait]":
-                                self.root.after(0, lambda sn=step_name: self.status_label.config(
+                                self.root.after(0, lambda sn=_found: self.status_label.config(
                                     text=f"Macro: เจอภาพ '{sn}' แล้ว สั่งหยุดสแปมและไปต่อ (ไม่กด)...", fg="green"
                                 ))
                                 time.sleep(delay_ms / 1000.0 if rest.startswith("[D:") else 0.5)
                             elif action == "[Break]":
-                                self.root.after(0, lambda sn=step_name: self.status_label.config(
+                                self.root.after(0, lambda sn=_found: self.status_label.config(
                                     text=f"Macro: เจอภาพ '{sn}' บังคับหยุดการทำงานมาโคร (Break)!", fg="red"
                                 ))
-                                self.log_bot_activity(f"Macro: ตรวจพบภาพ '{sn}' (คำสั่ง [Break]) สั่งหยุดมาโครและจบการทำงาน")
                                 self.macro_running = False
                                 break
                             else: # [Wait]
-                                self.root.after(0, lambda sn=step_name: self.status_label.config(
+                                self.root.after(0, lambda sn=_found: self.status_label.config(
                                     text=f"Macro: เจอภาพ '{sn}' แล้ว (ไม่กด) ไปสเต็ปถัดไป...", fg="green"
                                 ))
                                 time.sleep(delay_ms / 1000.0 if rest.startswith("[D:") else 0.5)

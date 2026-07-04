@@ -1,0 +1,9 @@
+{
+    "steps": [
+        "[SkipNot:1] id Victor's.png",
+        "[Break]"
+    ],
+    "recovery_steps": [],
+    "timeout_mins": 5,
+    "package_name": "com.devsisters.crg"
+}

@@ -1,0 +1,12 @@
+{
+    "steps": [
+        "[SkipNot:1] id 20.png",
+        "[Click] id 20.png",
+        "[SkipNot:1] id 22.png",
+        "[Click] id 22.png",
+        "[Loop-Control:4] Duration:10s"
+    ],
+    "recovery_steps": [],
+    "timeout_mins": 5,
+    "package_name": "com.devsisters.crg"
+}

@@ -120,3 +120,5 @@ NameError: name 'sn' is not defined
                                                ^^
 NameError: name 'sn' is not defined
 
+2026-07-03 20:49:37,902 - ERROR - Loop control parser failed: invalid literal for int() with base 10: '2 Count'
+2026-07-03 20:54:09,498 - ERROR - Loop control parser failed: invalid literal for int() with base 10: '2 Count'
