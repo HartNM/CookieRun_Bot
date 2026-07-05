@@ -1,124 +1,119 @@
-2026-07-02 13:53:06,163 - ERROR - ADB Connection Error:
-Traceback (most recent call last):
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 36, in connect
-    self.socket.connect((self.host, self.port))
-ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 57, in connect_adb
-    client.remote_connect("127.0.0.1", 7555)
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 83, in remote_connect
-    result = self._execute_cmd(cmd)
-             ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 13, in _execute_cmd
-    with self.create_connection() as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\client.py", line 14, in create_connection
-    conn.connect()
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 39, in connect
-    raise RuntimeError("ERROR: connecting to {}:{} {}.\nIs adb running on your computer?".format(
-RuntimeError: ERROR: connecting to 127.0.0.1:5037 [WinError 10061] No connection could be made because the target machine actively refused it.
-Is adb running on your computer?
-
-2026-07-02 13:55:13,926 - ERROR - ADB Connection Error:
-Traceback (most recent call last):
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 36, in connect
-    self.socket.connect((self.host, self.port))
-ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 57, in connect_adb
-    client.remote_connect("127.0.0.1", 7555)
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 83, in remote_connect
-    result = self._execute_cmd(cmd)
-             ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 13, in _execute_cmd
-    with self.create_connection() as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\client.py", line 14, in create_connection
-    conn.connect()
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 39, in connect
-    raise RuntimeError("ERROR: connecting to {}:{} {}.\nIs adb running on your computer?".format(
-RuntimeError: ERROR: connecting to 127.0.0.1:5037 [WinError 10061] No connection could be made because the target machine actively refused it.
-Is adb running on your computer?
-
-2026-07-02 13:59:17,346 - ERROR - ADB Connection Error:
-Traceback (most recent call last):
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 36, in connect
-    self.socket.connect((self.host, self.port))
-ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 57, in connect_adb
-    client.remote_connect("127.0.0.1", 7555)
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 83, in remote_connect
-    result = self._execute_cmd(cmd)
-             ^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\command\host\__init__.py", line 13, in _execute_cmd
-    with self.create_connection() as conn:
-         ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\client.py", line 14, in create_connection
-    conn.connect()
-  File "C:\Users\KPRU_IT\AppData\Local\Programs\Python\Python312\Lib\site-packages\ppadb\connection.py", line 39, in connect
-    raise RuntimeError("ERROR: connecting to {}:{} {}.\nIs adb running on your computer?".format(
-RuntimeError: ERROR: connecting to 127.0.0.1:5037 [WinError 10061] No connection could be made because the target machine actively refused it.
-Is adb running on your computer?
-
-2026-07-02 14:40:53,660 - ERROR - Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 306, in test_find
-    max_val, pos = self.do_template_match()
-                   ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "G:\hart\me\CookieRun_Bot\main.py", line 295, in do_template_match
-    result = cv2.matchTemplate(screen_img, template_img, cv2.TM_CCOEFF_NORMED)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-cv2.error: OpenCV(5.0.0) D:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\templmatch.cpp:1168: error: (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) && type == _templ.type() && _img.dims() <= 2 in function 'cv::matchTemplate'
-
-
-2026-07-02 14:41:05,200 - ERROR - Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 319, in find_and_click
-    max_val, pos = self.do_template_match()
-                   ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "G:\hart\me\CookieRun_Bot\main.py", line 295, in do_template_match
-    result = cv2.matchTemplate(screen_img, template_img, cv2.TM_CCOEFF_NORMED)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-cv2.error: OpenCV(5.0.0) D:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\templmatch.cpp:1168: error: (-215:Assertion failed) (depth == CV_8U || depth == CV_32F) && type == _templ.type() && _img.dims() <= 2 in function 'cv::matchTemplate'
-
-
-2026-07-02 15:33:30,304 - ERROR - Unhandled exception: 
-Traceback (most recent call last):
-  File "G:\hart\me\CookieRun_Bot\main.py", line 622, in <module>
-    app = CookieRunBotUI(root)
-          ^^^^^^^^^^^^^^^^^^^^
-  File "G:\hart\me\CookieRun_Bot\main.py", line 153, in __init__
-    self.setup_macro_tab()
-  File "G:\hart\me\CookieRun_Bot\main.py", line 185, in setup_macro_tab
-    f_add = tk.Frame(self3.tab_macro)
-                     ^^^^^
-NameError: name 'self3' is not defined. Did you mean: 'self'?
-
-2026-07-03 09:04:24,318 - ERROR - Macro Thread Error: Traceback (most recent call last):
-  File "C:\Users\Hart\Desktop\New folder (2)\CookieRun_Bot\main.py", line 1312, in macro_worker
-    self.log_bot_activity(f"Macro: \u0e15\u0e23\u0e27\u0e08\u0e1e\u0e1a\u0e20\u0e32\u0e1e '{sn}' (\u0e04\u0e33\u0e2a\u0e31\u0e48\u0e07 [Break]) \u0e2a\u0e31\u0e48\u0e07\u0e2b\u0e22\u0e38\u0e14\u0e21\u0e32\u0e42\u0e04\u0e23\u0e41\u0e25\u0e30\u0e08\u0e1a\u0e01\u0e32\u0e23\u0e17\u0e33\u0e07\u0e32\u0e19")
-                                               ^^
-NameError: name 'sn' is not defined
-
-2026-07-03 09:30:18,441 - ERROR - Macro Thread Error: Traceback (most recent call last):
-  File "C:\Users\Hart\Desktop\New folder (2)\CookieRun_Bot\main.py", line 1666, in macro_worker
-    self.log_bot_activity(f"Macro: \u0e15\u0e23\u0e27\u0e08\u0e1e\u0e1a\u0e20\u0e32\u0e1e '{sn}' (\u0e04\u0e33\u0e2a\u0e31\u0e48\u0e07 [Break]) \u0e2a\u0e31\u0e48\u0e07\u0e2b\u0e22\u0e38\u0e14\u0e21\u0e32\u0e42\u0e04\u0e23\u0e41\u0e25\u0e30\u0e08\u0e1a\u0e01\u0e32\u0e23\u0e17\u0e33\u0e07\u0e32\u0e19")
-                                               ^^
-NameError: name 'sn' is not defined
-
-2026-07-03 09:43:47,760 - ERROR - Macro Thread Error: Traceback (most recent call last):
-  File "C:\Users\Hart\Desktop\New folder (2)\CookieRun_Bot\main.py", line 1666, in macro_worker
-    self.log_bot_activity(f"Macro: \u0e15\u0e23\u0e27\u0e08\u0e1e\u0e1a\u0e20\u0e32\u0e1e '{sn}' (\u0e04\u0e33\u0e2a\u0e31\u0e48\u0e07 [Break]) \u0e2a\u0e31\u0e48\u0e07\u0e2b\u0e22\u0e38\u0e14\u0e21\u0e32\u0e42\u0e04\u0e23\u0e41\u0e25\u0e30\u0e08\u0e1a\u0e01\u0e32\u0e23\u0e17\u0e33\u0e07\u0e32\u0e19")
-                                               ^^
-NameError: name 'sn' is not defined
-
-2026-07-03 20:49:37,902 - ERROR - Loop control parser failed: invalid literal for int() with base 10: '2 Count'
-2026-07-03 20:54:09,498 - ERROR - Loop control parser failed: invalid literal for int() with base 10: '2 Count'
+2026-07-04 22:40:34,843 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:35,844 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:36,845 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:37,845 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:38,845 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:39,846 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:40,846 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:41,847 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:42,847 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:43,848 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:44,848 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:46,932 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:47,933 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:48,934 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:40:49,934 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:41:17,719 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:41:20,212 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:41:22,653 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:41:25,087 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:41:27,533 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:07,198 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:08,198 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:09,199 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:10,199 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:11,200 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:12,200 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:13,201 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:14,201 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:15,202 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:16,202 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:17,203 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:18,203 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:19,203 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:20,204 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:21,204 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:22,204 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:23,205 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:24,205 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:25,206 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:26,206 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:27,207 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:28,207 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:29,208 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:30,208 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:31,209 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:32,210 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:33,210 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:34,210 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:35,211 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:36,212 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:37,212 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:38,212 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:39,213 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:40,214 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:41,214 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:42,215 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:43,215 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:44,216 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:45,216 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:46,217 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:47,217 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:48,218 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:49,218 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:50,218 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:51,219 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:52,219 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:53,219 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:54,220 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:55,220 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:56,221 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:57,222 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:58,222 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:42:59,223 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:00,223 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:01,224 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:02,224 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:03,225 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:04,225 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:05,226 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:06,226 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:07,227 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:08,227 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:09,228 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:10,228 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:11,228 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:12,228 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:13,229 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:14,229 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:15,230 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:16,230 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:17,231 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:18,231 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:19,232 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:20,232 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:21,232 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:22,233 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:23,233 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:24,234 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:43:25,235 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:22,016 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:23,017 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:24,018 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:25,018 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:26,019 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:27,019 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:28,019 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:29,020 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:30,021 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:31,021 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:32,022 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:33,022 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:34,023 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:35,023 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:36,023 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:44:37,024 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:45:06,860 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:45:07,861 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:45:08,861 - ERROR - Macro template swipe failed: list index out of range
+2026-07-04 22:45:09,862 - ERROR - Macro template swipe failed: list index out of range

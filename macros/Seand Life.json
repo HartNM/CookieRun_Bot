@@ -1,0 +1,16 @@
+{
+    "steps": [
+        "[FullSkipNot:3] Send Life.png",
+        "[Full-Click] Send Life.png",
+        "[Click] Send Life Confirm.png",
+        "[Click] Send Life Confirm 2.png",
+        "[FullSkipNot:1] Send Life.png",
+        "[Loop-Control:5] Count:400",
+        "[Swipe-Img] Swipe List Friends.png Direction:Bottom-to-Top 300ms"
+    ],
+    "recovery_steps": [],
+    "timeout_mins": 5,
+    "package_name": "com.devsisters.crg",
+    "screencap_delay_ms": 0,
+    "post_step_delay_ms": 0
+}

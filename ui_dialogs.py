@@ -266,7 +266,7 @@ def ask_loop_control_details(root):
 
     mode_frame = tk.Frame(d)
     mode_frame.pack()
-    rb_dur = tk.Radiobutton(mode_frame, text="ตามเวลา (วินาที)", variable=mode_var, value="duration",
+    rb_dur = tk.Radiobutton(mode_frame, text="ตามเวลา (ms)", variable=mode_var, value="duration",
                             command=lambda: _on_mode_change())
     rb_dur.pack(side=tk.LEFT, padx=8)
     rb_cnt = tk.Radiobutton(mode_frame, text="ตามจำนวนรอบ", variable=mode_var, value="count",
@@ -276,9 +276,9 @@ def ask_loop_control_details(root):
     # ฟิลด์ Duration
     frame_dur = tk.Frame(d)
     frame_dur.pack(pady=4)
-    tk.Label(frame_dur, text="ระยะเวลา (วินาที):").pack(side=tk.LEFT)
+    tk.Label(frame_dur, text="ระยะเวลา (ms):").pack(side=tk.LEFT)
     entry_sec = tk.Entry(frame_dur, width=8)
-    entry_sec.insert(0, "30")
+    entry_sec.insert(0, "30000")
     entry_sec.pack(side=tk.LEFT, padx=5)
 
     # ฟิลด์ Count
@@ -305,7 +305,7 @@ def ask_loop_control_details(root):
         if mode_var.get() == "duration":
             sec_val = entry_sec.get().strip()
             if not sec_val.isdigit() or int(sec_val) < 1:
-                messagebox.showwarning("Error", "ระยะเวลาวินาทีต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป!", parent=d)
+                messagebox.showwarning("Error", "ระยะเวลามิลลิวินาทีต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 1 ขึ้นไป!", parent=d)
                 return
             result['steps'] = int(steps_val)
             result['mode'] = 'duration'
@@ -331,4 +331,147 @@ def ask_loop_control_details(root):
     root.wait_window(d)
     if 'steps' in result:
         return result['steps'], result['mode'], result['value']
+    return None
+
+def ask_multi_templates(root, available_templates, initial_template=None):
+    d = tk.Toplevel(root)
+    d.title("เลือกหลายภาพ (Multi-Select)")
+    d.geometry("320x350")
+    d.transient(root)
+    d.grab_set()
+
+    result = []
+
+    tk.Label(d, text="เลือกภาพที่ต้องการรอ (เลือกได้มากกว่า 1 ภาพ):", font=("Helvetica", 10, "bold")).pack(pady=(12, 0))
+    tk.Label(d, text="(กด Ctrl+Click เพื่อเลือกหลายภาพ)", fg="gray").pack()
+
+    frame_lb = tk.Frame(d)
+    frame_lb.pack(pady=5, padx=20, fill="both", expand=True)
+    scrollbar_lb = tk.Scrollbar(frame_lb, orient="vertical")
+    listbox = tk.Listbox(frame_lb, selectmode=tk.MULTIPLE, yscrollcommand=scrollbar_lb.set, exportselection=False)
+    scrollbar_lb.config(command=listbox.yview)
+    scrollbar_lb.pack(side=tk.RIGHT, fill="y")
+    listbox.pack(side=tk.LEFT, fill="both", expand=True)
+
+    templates = [f for f in available_templates if not f.startswith("-- ")]
+    for t in templates:
+        listbox.insert(tk.END, t)
+
+    # Pre-select initial_template
+    if initial_template and initial_template in templates:
+        idx = templates.index(initial_template)
+        listbox.selection_set(idx)
+        listbox.see(idx)
+
+    def on_ok():
+        selected_indices = listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Error", "กรุณาเลือกภาพอย่างน้อย 1 ภาพ!", parent=d)
+            return
+        result.extend([listbox.get(i) for i in selected_indices])
+        d.destroy()
+
+    tk.Button(d, text="ตกลง (OK)", command=on_ok, bg="#C8E6C9", width=15).pack(pady=10)
+    root.wait_window(d)
+    return result
+
+def ask_swipe_details(root, available_templates):
+    d = tk.Toplevel(root)
+    d.title("ตั้งค่าการลากหน้าจอ (Swipe)")
+    d.geometry("340x350")
+    d.transient(root)
+    d.grab_set()
+
+    result = {}
+
+    nb = ttk.Notebook(d)
+    nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+    # --- Tab 1: Coordinates ---
+    f_coord = tk.Frame(nb)
+    nb.add(f_coord, text="ระบุพิกัด X,Y")
+
+    tk.Label(f_coord, text="จุดเริ่มต้น X,Y (เช่น 960,800):", font=("Helvetica", 9, "bold")).pack(pady=(10, 0))
+    entry_start = tk.Entry(f_coord, width=20)
+    entry_start.insert(0, "960,800")
+    entry_start.pack(pady=5)
+
+    tk.Label(f_coord, text="จุดสิ้นสุด X,Y (เช่น 960,300):", font=("Helvetica", 9, "bold")).pack(pady=(8, 0))
+    entry_end = tk.Entry(f_coord, width=20)
+    entry_end.insert(0, "960,300")
+    entry_end.pack(pady=5)
+
+    # --- Tab 2: Template ---
+    f_temp = tk.Frame(nb)
+    nb.add(f_temp, text="เลือกรูปภาพ")
+
+    tk.Label(f_temp, text="เลือกรูปภาพขอบเขตลาก:", font=("Helvetica", 9, "bold")).pack(pady=(10, 0))
+    templates = [f for f in available_templates if not f.startswith("-- ")]
+    combo_img = ttk.Combobox(f_temp, values=templates, state="readonly", width=25)
+    combo_img.pack(pady=5)
+    if templates:
+        combo_img.current(0)
+
+    tk.Label(f_temp, text="ทิศทางการลาก:", font=("Helvetica", 9, "bold")).pack(pady=(8, 0))
+    combo_dir = ttk.Combobox(f_temp, values=[
+        "บนลงล่าง (Top-to-Bottom)",
+        "ล่างขึ้นบน (Bottom-to-Top)",
+        "ซ้ายไปขวา (Left-to-Right)",
+        "ขวาไปซ้าย (Right-to-Left)"
+    ], state="readonly", width=25)
+    combo_dir.pack(pady=5)
+    combo_dir.current(0)
+
+    # --- Shared Duration ---
+    f_bottom = tk.Frame(d)
+    f_bottom.pack(fill="x", padx=15, pady=(0, 10))
+    tk.Label(f_bottom, text="ระยะเวลาลาก (ms):", font=("Helvetica", 9, "bold")).pack(side=tk.LEFT, padx=(0, 5))
+    entry_dur = tk.Entry(f_bottom, width=10)
+    entry_dur.insert(0, "500")
+    entry_dur.pack(side=tk.LEFT)
+
+    def on_ok():
+        mode = nb.index(nb.select()) # 0 = coord, 1 = temp
+        dur_val = entry_dur.get().strip()
+        if not dur_val.isdigit() or int(dur_val) < 50:
+            messagebox.showwarning("Error", "ระยะเวลาลากต้องเป็นตัวเลข ms (อย่างน้อย 50ms)!", parent=d)
+            return
+
+        if mode == 0:
+            start_val = entry_start.get().strip()
+            end_val = entry_end.get().strip()
+            if "," not in start_val or "," not in end_val:
+                messagebox.showwarning("Error", "กรุณากรอกพิกัดในรูปแบบ X,Y เช่น 960,800!", parent=d)
+                return
+            result['type'] = 'coord'
+            result['start'] = start_val
+            result['end'] = end_val
+            result['duration'] = int(dur_val)
+        else:
+            img_val = combo_img.get()
+            if not img_val:
+                messagebox.showwarning("Error", "กรุณาเลือกรูปภาพต้นแบบ!", parent=d)
+                return
+            dir_text = combo_dir.get()
+            dir_key = "Top-to-Bottom"
+            if "Bottom-to-Top" in dir_text:
+                dir_key = "Bottom-to-Top"
+            elif "Left-to-Right" in dir_text:
+                dir_key = "Left-to-Right"
+            elif "Right-to-Left" in dir_text:
+                dir_key = "Right-to-Left"
+                
+            result['type'] = 'temp'
+            result['img'] = img_val
+            result['dir'] = dir_key
+            result['duration'] = int(dur_val)
+        d.destroy()
+
+    tk.Button(d, text="ตกลง (OK)", command=on_ok, bg="#C8E6C9", width=15).pack(pady=(0, 10))
+    root.wait_window(d)
+    if 'type' in result:
+        if result['type'] == 'coord':
+            return 'coord', (result['start'], result['end'], result['duration'])
+        else:
+            return 'temp', (result['img'], result['dir'], result['duration'])
     return None

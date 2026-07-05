@@ -1,0 +1,41 @@
+{
+    "steps": [
+        "[Click] Play!.png",
+        "[Click] Play!2.png",
+        "[Click] Fast Start.png",
+        "[Wait] Exp End.png",
+        "[Click] Stop.png",
+        "[Click] Quit.png",
+        "[Click] Quit2.png",
+        "[Delay] 1000ms",
+        "[Solve-Minigame] Bot check.png",
+        "[SkipNot:1] Result Ok.png",
+        "[Click] Result Ok.png",
+        "[SkipNot:1] Level Up Confirm.png",
+        "[Click] Level Up Confirm.png",
+        "[SkipNot:1] Level Up Confirm.png",
+        "[Click] Level Up Confirm.png",
+        "[Loop-Control:6] Duration:5000ms"
+    ],
+    "recovery_steps": [
+        "[Force-Stop-Game]",
+        "[Delay] 2000ms",
+        "[Launch-Game]",
+        "[Delay] 15000ms",
+        "[SkipNot:3] Previous Results Confirm.png",
+        "[Click] Previous Results Confirm.png",
+        "[Click] Result Confirm.png",
+        "[SkipNot:1] News Exit.png",
+        "[Click] News Exit.png",
+        "[Solve-Minigame] Bot check.png",
+        "[SkipNot:1] Mystery Box Open All.png",
+        "[Click] Mystery Box Open All.png",
+        "[SkipNot:1] Mystery Box Comfirm.png",
+        "[Click] Mystery Box Comfirm.png",
+        "[Loop-Control:10] Duration:10000ms"
+    ],
+    "timeout_mins": 1,
+    "package_name": "com.devsisters.crg",
+    "screencap_delay_ms": 1000,
+    "post_step_delay_ms": 500
+}

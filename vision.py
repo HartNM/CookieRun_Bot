@@ -25,7 +25,7 @@ import glob
 import json
 import numpy as np
 
-def do_template_match_by_name(device, template_name):
+def do_template_match_by_name(device, template_name, ignore_roi=False):
     if not device: return None, None
     template_path = os.path.join("templates", template_name)
     if not os.path.exists(template_path):
@@ -40,7 +40,7 @@ def do_template_match_by_name(device, template_name):
     
     config_path = os.path.join("templates", "config.json")
     search_roi = None
-    if os.path.exists(config_path):
+    if not ignore_roi and os.path.exists(config_path):
         with open(config_path, 'r', encoding='utf-8') as f:
             config_data = json.load(f)
             if template_name in config_data:
@@ -142,9 +142,10 @@ def solve_minigame_action(device, is_running_callback, set_status_callback, dete
             tap1_x, tap1_y = c1_x, c1_y
             tap2_x, tap2_y = c2_x, c2_y
             
+
         # Click the two different cards (short delay between clicks)
         device.shell(f"input tap {tap1_x} {tap1_y}")
-        time.sleep(0.5)
+        time.sleep(1.0)
         device.shell(f"input tap {tap2_x} {tap2_y}")
         
         # Wait for animation/shuffle before checking again
@@ -152,20 +153,4 @@ def solve_minigame_action(device, is_running_callback, set_status_callback, dete
         attempt += 1
         
     return False
-import os
-import glob
 
-def check_lobby_reached(device, log_callback=None):
-    lobby_files = glob.glob("templates/Lobby*.png")
-    if not lobby_files:
-        val, _ = do_template_match_by_name(device, "Lobby.png")
-        return val is not None and val >= 0.8
-        
-    for file_path in lobby_files:
-        name = os.path.basename(file_path)
-        val, _ = do_template_match_by_name(device, name)
-        if val is not None and val >= 0.8:
-            if log_callback:
-                log_callback(f"[Lobby Check] ตรวจพบหน้าล็อบบี้สำเร็จจากรูป '{name}' (ความแม่นยำ: {val*100:.1f}%)")
-            return True
-    return False

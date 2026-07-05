@@ -22,8 +22,13 @@ A Python Tkinter desktop application that automates the **CookieRun: Kingdom** m
 
 ```
 CookieRun_Bot/
-├── main.py              # Main entry point; CookieRunBotUI class (Tkinter UI + macro engine)
-├── vision.py            # Image processing functions (template matching, minigame solver, lobby check)
+├── main.py              # Entry point + CookieRunBotUI (wire-up only, ~170 lines)
+├── tab_templates.py     # TemplatesTab — UI and logic for Templates tab (Tab 1)
+├── tab_macro.py         # MacroTab — UI and logic for Macro Builder tab (Tab 2)
+├── tab_recovery.py      # RecoveryTab — UI and logic for Recovery tab (Tab 3)
+├── macro_engine.py      # macro_worker(), run_recovery_sequence(), log_bot_activity()
+├── adb_connect.py       # connect_adb() — port scanning and device connection
+├── vision.py            # Image processing (template matching, minigame solver, lobby check)
 ├── ui_components.py     # CropWindow — interactive screenshot crop tool
 ├── ui_dialogs.py        # Popup dialogs (spam wait details, loop control, etc.)
 ├── config_manager.py    # Save/Load macro profiles as JSON
@@ -42,8 +47,8 @@ CookieRun_Bot/
 ## UI Tabs
 
 ### 1. 🛠️ จัดการภาพต้นแบบ (Templates)
-- **Capture & Crop** — takes a full screenshot from ADB, opens `CropWindow` for the user to drag-select a region, and saves the crop as a `.png` in `templates/`.
-- **Rename / Delete** — rename or remove saved templates.
+- **Capture & Crop** — takes a full screenshot from ADB or imports a local screenshot file (e.g. from `stuck_screenshots/`), opens `CropWindow` for the user to drag-select a region, and saves the crop as a `.png` in `templates/`.
+- **Rename / Delete** — rename or remove saved templates. Renaming a template automatically updates all of its occurrences in active UI listboxes (Macro/Recovery tabs) and all profile JSON files in the `macros/` directory.
 - **Test Find** — runs a one-shot template match against the current screen and shows the confidence score.
 - **Find & Click** — runs a match and taps the found location.
 
@@ -51,6 +56,7 @@ CookieRun_Bot/
 - Builds an ordered list (Listbox) of steps that the bot will execute sequentially, looping indefinitely.
 - **"เลือกปุ่มที่เซฟไว้"** combobox — selects the template/action. Contains both image names from `templates/` and special action entries (see below).
 - **"Action"** combobox — shown only when a template image is selected (hidden for special actions).
+- **"ดีเลย์แคปภาพ" / "ดีเลย์เปลี่ยนสเต็ป"** — global configurations for screenshot check rate (default 1000ms) and post-action transition delay (default 1000ms).
 - Supports drag-and-drop reordering, move up/down, edit, delete.
 - Save/Load profiles via `config_manager.py`.
 
@@ -65,15 +71,15 @@ These entries appear at the **top** of the combo and do **not** need an Action d
 
 | Entry Label | Inserted Step Token | Behavior |
 |-------------|--------------------|-|
-| `-- เพิ่มเวลาหน่วง (Delay) --` | `[Delay-Only] {ms}ms` | Pauses execution for N milliseconds |
+| `-- เพิ่มเวลาหน่วง (Delay) --` | `[Delay] {ms}ms` | Pauses execution for N milliseconds |
 | `-- แก้ไขมินิเกม (Solve Minigame) --` | `[Solve-Minigame] {img}` | Auto-solves the minigame using MSE card detection |
-| `-- วนลูป (Loop) --` | `[Loop-Control:{N}] Duration:{sec}s` or `[Loop-Control:{N}] Count:{times}` | วนลูป N สเต็ปล่าสุดซ้ำ — ตามระยะเวลา (Duration) หรือตามจำนวนรอบ (Count) |
+| `-- วนลูป (Loop) --` | `[Loop-Control:{N}] Duration:{ms}ms` or `[Loop-Control:{N}] Count:{times}` | วนลูป N สเต็ปล่าสุดซ้ำ — ตามระยะเวลา (Duration) หรือตามจำนวนรอบ (Count) |
 | `-- ปิดแอปเกม (Force Stop) --` | `[Force-Stop-Game]` | Runs `adb shell am force-stop {package}` |
 | `-- เปิดแอปเกม (Launch Game) --` | `[Launch-Game]` | Runs `adb shell monkey` to launch the game |
-| `-- ตรวจสอบหน้าล็อบบี้ (Check Lobby) --` | `[Check-Lobby]` | Waits up to 45s for any `Lobby*.png` to appear |
 | `-- หยุดมาโคร (Break) --` | `[Break]` | Immediately stops the macro when selected template is found |
 | `-- พิมพ์ข้อความ (Type Text) --` | `[Type-Text] {text}` | Types text via `adb shell input text` (spaces escaped as `%s`) |
 | `-- กด Enter --` | `[Press-Enter]` | Sends Enter key via `adb shell input keyevent 66` |
+| `-- ลากหน้าจอ (Swipe) --` | `[Swipe] {x1},{y1} -> {x2},{y2} {ms}ms` or `[Swipe-Img] {img} Direction:{dir} {ms}ms` | Performs a swipe gesture either via custom coordinates or dynamically inside a matched template area (e.g. from top edge to bottom edge) |
 
 ---
 
@@ -82,12 +88,15 @@ These appear in the **"Action"** combobox when a template image is selected:
 
 | Action Token | Format Example | Behavior |
 |---|---|---|
-| `[Click]` | `[Click] Button.png` | Wait for image → tap it |
+| `[Click]` | `[Click] Button.png` | Wait for image (using saved ROI/coordinates) → tap it |
 | `[Wait]` | `[Wait] Screen.png` | Wait for image → do NOT tap, just proceed |
+| `[Full-Click]` | `[Full-Click] Button.png` | Wait for image (scanning full screen, ignoring saved ROI) → tap it |
 | `[Spam-Wait]` | `[Spam-Wait] [Tap.png] [S:600] [R:200] Target.png` | Spam-tap a button in background, wait for Target image to appear (no click on target). Supports multiple targets separated by `\|` (e.g., `T1.png\|T2.png\|T3.png`) — any match triggers success |
 | `[Spam-Click]` | `[Spam-Click] [Tap.png] [S:600] [R:200] Target.png` | Same as Spam-Wait but also clicks the target image when found. Also supports multiple targets with `\|` |
-| `[Skip-If]` | `[Skip:2] Image.png` | If image found → skip next N steps |
-| `[Skip-IfNot]` | `[SkipNot:2] Image.png` | If image NOT found → skip next N steps |
+| `[Skip-If]` | `[Skip:2] Image.png` | If image found (within saved ROI) → skip next N steps |
+| `[Skip-IfNot]` | `[SkipNot:2] Image.png` | If image NOT found (within saved ROI) → skip next N steps |
+| `[Full-Skip-If]` | `[FullSkip:2] Image.png` | If image found (scanning full screen, ignoring saved ROI) → skip next N steps |
+| `[Full-Skip-IfNot]` | `[FullSkipNot:2] Image.png` | If image NOT found (scanning full screen, ignoring saved ROI) → skip next N steps |
 | `[Break]` | `[Break] Image.png` | If image found → stop macro entirely |
 
 ### Spam-Wait / Spam-Click Parameter Syntax
@@ -99,12 +108,7 @@ These appear in the **"Action"** combobox when a template image is selected:
 - `R:` — random additional delay (0 to R ms) added per tap to avoid detection
 - `wait_templates` — one or more `.png` names separated by `|` (up to 3). Bot stops waiting as soon as **any** image is found.
 
-### Optional Delay Suffix
-Any `[Click]`, `[Wait]`, `[Spam-Wait]`, `[Spam-Click]` step can have a custom post-action delay:
-```
-[Click] [D:1500] Button.png
-```
-Default delay is 2000ms for Click/Spam-Click, 500ms for Wait/Spam-Wait.
+*(Note: The default post-action delay for all generic Click, Wait, and Spam steps is 0 ms. If you need custom delays, insert a standalone `[Delay] {ms}ms` step).*
 
 ---
 
@@ -113,8 +117,8 @@ Default delay is 2000ms for Click/Spam-Click, 500ms for Wait/Spam-Wait.
 - Loops the entire step list indefinitely (`loop_count`).
 - For each step:
   1. Parses the step token string to extract `action`, `spam_target`, `spam_interval`, `spam_random`, `delay_ms`, `step_name`.
-  2. Dispatches to appropriate handler (Delay-Only, Loop-Control, Solve-Minigame, Check-Lobby, Force-Stop-Game, Launch-Game, Skip-If, SkipNot, Click/Wait/Spam, Type-Text, Press-Enter).
-  3. For image-waiting steps: polls `do_template_match_by_name()` every ~1s until image found or timeout.
+  2. Dispatches to appropriate handler (Delay, Loop-Control, Solve-Minigame, Check-Lobby, Force-Stop-Game, Launch-Game, Skip-If, SkipNot, Click/Wait/Spam, Type-Text, Press-Enter).
+  3. For image-waiting steps (including Click, Wait, Spam-Wait, and Spam-Click): polls `do_template_match_by_name()` every ~1s until target image is found or timeout fires.
   4. On **timeout**: triggers `run_recovery_sequence()`, resets step index to 0.
 
 ### Anti-Stuck System
@@ -131,7 +135,6 @@ Default delay is 2000ms for Click/Spam-Click, 500ms for Wait/Spam-Wait.
 - Supports **ROI** (Region of Interest) from `templates/config.json` — search is restricted to a padded bounding box of the original crop position, speeding up matching on large screens.
 - `do_template_match_by_name(device, name)` — returns `(max_val, (center_x, center_y))`.
 - `solve_minigame_action(...)` — takes a screenshot, crops 6 card regions at hardcoded 1920×1080 coords, computes MSE between each pair, clicks the 2 most-different cards (max 10 attempts).
-- `check_lobby_reached(device)` — globs `templates/Lobby*.png` and returns True if any matches.
 
 ---
 
@@ -142,7 +145,9 @@ Saved by `config_manager.py`:
     "steps": ["[Click] Button.png", "[Wait] Screen.png"],
     "recovery_steps": ["[Force-Stop-Game]", "[Launch-Game]", "[Check-Lobby]"],
     "timeout_mins": 5,
-    "package_name": "com.devsisters.crg"
+    "package_name": "com.devsisters.crg",
+    "screencap_delay_ms": 1000,
+    "post_step_delay_ms": 1000
 }
 ```
 

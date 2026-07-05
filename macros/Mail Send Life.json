@@ -1,0 +1,12 @@
+{
+    "steps": [
+        "[Click] Mail Send Life Start.png",
+        "[Click] Send Life Confirm.png",
+        "[Loop-Control:1] Count:1000"
+    ],
+    "recovery_steps": [],
+    "timeout_mins": 5,
+    "package_name": "com.devsisters.crg",
+    "screencap_delay_ms": 0,
+    "post_step_delay_ms": 0
+}

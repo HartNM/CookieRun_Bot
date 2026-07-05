@@ -3,7 +3,7 @@ import os
 from tkinter import filedialog, messagebox
 import tkinter as tk
 
-def save_macro(macro_listbox, recovery_listbox, timeout_var, package_var):
+def save_macro(macro_listbox, recovery_listbox, timeout_var, package_var, screencap_delay_var, post_step_delay_var):
     steps = list(macro_listbox.get(0, tk.END))
     if not steps:
         messagebox.showwarning("Warning", "ไม่มีสเต็ปในคิวให้เซฟครับ")
@@ -22,7 +22,9 @@ def save_macro(macro_listbox, recovery_listbox, timeout_var, package_var):
                 "steps": steps,
                 "recovery_steps": list(recovery_listbox.get(0, tk.END)),
                 "timeout_mins": int(timeout_var.get()),
-                "package_name": package_var.get().strip()
+                "package_name": package_var.get().strip(),
+                "screencap_delay_ms": int(screencap_delay_var.get()),
+                "post_step_delay_ms": int(post_step_delay_var.get())
             }
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
@@ -30,7 +32,7 @@ def save_macro(macro_listbox, recovery_listbox, timeout_var, package_var):
         except Exception as e:
             messagebox.showerror("Error", f"บันทึกไม่สำเร็จ: {e}")
 
-def load_macro(macro_listbox, recovery_listbox, timeout_var, package_var):
+def load_macro(macro_listbox, recovery_listbox, timeout_var, package_var, screencap_delay_var, post_step_delay_var):
     os.makedirs("macros", exist_ok=True)
     filepath = filedialog.askopenfilename(
         initialdir=os.path.join(os.getcwd(), "macros"),
@@ -53,6 +55,8 @@ def load_macro(macro_listbox, recovery_listbox, timeout_var, package_var):
                 
                 timeout_var.set(str(data.get("timeout_mins", 5)))
                 package_var.set(data.get("package_name", "com.devsisters.crg"))
+                screencap_delay_var.set(str(data.get("screencap_delay_ms", 1000)))
+                post_step_delay_var.set(str(data.get("post_step_delay_ms", 1000)))
                 
                 recovery_listbox.delete(0, tk.END)
                 recovery_steps = data.get("recovery_steps", [])
